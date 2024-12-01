@@ -48,4 +48,11 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
+    public function completedSections()
+    {
+        return $this->belongsToMany(Section::class, 'user_section_progress')
+                    ->withPivot('is_completed')
+                    ->withTimestamps();
+    }
 }
