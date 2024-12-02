@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LearningPathController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\UserSectionProgressController;
@@ -63,6 +64,14 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [SectionController::class, 'update'])->middleware('role:admin');
         Route::delete('/{id}', [SectionController::class, 'destroy'])->middleware('role:admin');
     });
+
+    Route::prefix('questions')->group(function () {
+        Route::get('/{quizId}', [QuestionController::class, 'index']);
+        Route::post('/', [QuestionController::class, 'store']);
+        Route::get('/{id}', [QuestionController::class, 'show']);
+        Route::put('/{id}', [QuestionController::class, 'update']);
+        Route::delete('/{id}', [QuestionController::class, 'destroy']);
+    });    
 
     // User Section Progress routes
     Route::prefix('progress')->group(function () {

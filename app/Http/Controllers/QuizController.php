@@ -24,8 +24,7 @@ class QuizController extends Controller
         $validated = $request->validate([
             'learning_path_id' => 'required|exists:learning_paths,id',
             'title' => 'required|string|max:255',
-            'image' => 'required|string',
-            'questions' => 'required|string', // JSON string for questions
+            'description' => 'required',
         ]);
 
         $quiz = Quiz::create($validated);
@@ -69,8 +68,7 @@ class QuizController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'required|string',
-            'questions' => 'required|string',
+            'description' => 'required',
         ]);
 
         $quiz->update($validated);
