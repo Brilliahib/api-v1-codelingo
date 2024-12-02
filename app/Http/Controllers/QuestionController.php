@@ -13,7 +13,7 @@ class QuestionController extends Controller
         return response()->json([
             'statusCode' => 200,
             'message' => 'Questions retrieved successfully',
-            'data' => $questions
+            'data' => $questions,
         ]);
     }
 
@@ -22,16 +22,23 @@ class QuestionController extends Controller
         $validated = $request->validate([
             'quiz_id' => 'required|exists:quizzes,id',
             'question_text' => 'required|string',
-            'answers' => 'required|array', // Jawaban dalam format array
-            'answers.*.text' => 'required|string', // Teks jawaban
-            'answers.*.is_correct' => 'required|boolean', // Jawaban benar
+            'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'answers' => 'required|array',
+            'answers.*.text' => 'required|string',
+            'answers.*.is_correct' => 'required|boolean',
         ]);
+
+        if ($request->hasFile('question_image')) {
+            $imageName = time() . '_' . $request->file('question_image')->getClientOriginalName();
+            $imagePath = $request->file('question_image')->storeAs('question_images', $imageName, 'public');
+            $validated['question_image'] = 'public/' . $imagePath;
+        }
 
         $question = Question::create($validated);
         return response()->json([
             'statusCode' => 201,
             'message' => 'Question created successfully',
-            'data' => $question
+            'data' => $question,
         ]);
     }
 
@@ -39,17 +46,20 @@ class QuestionController extends Controller
     {
         $question = Question::find($id);
         if (!$question) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Question not found',
-                'data' => null
-            ], 404);
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Question not found',
+                    'data' => null,
+                ],
+                404,
+            );
         }
 
         return response()->json([
             'statusCode' => 200,
             'message' => 'Question retrieved successfully',
-            'data' => $question
+            'data' => $question,
         ]);
     }
 
@@ -57,25 +67,43 @@ class QuestionController extends Controller
     {
         $question = Question::find($id);
         if (!$question) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Question not found',
-                'data' => null
-            ], 404);
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Question not found',
+                    'data' => null,
+                ],
+                404,
+            );
         }
 
         $validated = $request->validate([
             'question_text' => 'required|string',
+            'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
             'answers' => 'required|array',
             'answers.*.text' => 'required|string',
             'answers.*.is_correct' => 'required|boolean',
         ]);
 
+        if ($request->hasFile('question_image')) {
+            if ($question->question_image) {
+                $oldImagePath = public_path('storage/' . $question->question_image);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath); 
+                }
+            }
+
+            $imageName = time() . '_' . $request->file('question_image')->getClientOriginalName();
+            $imagePath = $request->file('question_image')->storeAs('question_images', $imageName, 'public');
+            $validated['question_image'] = 'public/' . $imagePath;
+        }
+
         $question->update($validated);
+
         return response()->json([
             'statusCode' => 200,
             'message' => 'Question updated successfully',
-            'data' => $question
+            'data' => $question,
         ]);
     }
 
@@ -83,18 +111,21 @@ class QuestionController extends Controller
     {
         $question = Question::find($id);
         if (!$question) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Question not found',
-                'data' => null
-            ], 404);
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Question not found',
+                    'data' => null,
+                ],
+                404,
+            );
         }
 
         $question->delete();
         return response()->json([
             'statusCode' => 200,
             'message' => 'Question deleted successfully',
-            'data' => null
+            'data' => null,
         ]);
     }
 }
