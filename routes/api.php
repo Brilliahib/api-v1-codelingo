@@ -85,7 +85,8 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::prefix('leaderboard')->group(function () {
-        Route::get('/', [LeaderboardController::class, 'getTopUsers']); 
+        Route::get('/', [LeaderboardController::class, 'getTopUsers']);
+        Route::get('/next-league', [LeaderboardController::class, 'getNextLeagueProgress']); 
         Route::get('/bronze', [LeaderboardController::class, 'getBronzeUsers']);
         Route::get('/silver', [LeaderboardController::class, 'getSilverUsers']); 
         Route::get('/gold', [LeaderboardController::class, 'getGoldUsers']); 
