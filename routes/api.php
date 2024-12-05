@@ -85,6 +85,11 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::prefix('leaderboard')->group(function () {
-        Route::get('/', [LeaderboardController::class, 'getTopUsers']);
-    });
+        Route::get('/', [LeaderboardController::class, 'getTopUsers']); 
+        Route::get('/bronze', [LeaderboardController::class, 'getBronzeUsers']);
+        Route::get('/silver', [LeaderboardController::class, 'getSilverUsers']); 
+        Route::get('/gold', [LeaderboardController::class, 'getGoldUsers']); 
+        Route::get('/emerald', [LeaderboardController::class, 'getEmeraldUsers']); 
+        Route::get('/diamond', [LeaderboardController::class, 'getDiamondUsers']); 
+    });    
 });

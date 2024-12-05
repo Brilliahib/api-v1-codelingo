@@ -155,55 +155,56 @@ class QuestionController extends Controller
     }
 
     public function submitSingleQuestion(Request $request, $questionId)
-{
-    // Validasi input
-    $validated = $request->validate([
-        'user_id' => 'required|exists:users,id',
-        'answer_id' => 'required|exists:answers,id',
-    ]);
+    {
+        // Validasi input
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'answer_id' => 'required|exists:answers,id',
+        ]);
 
-    // Cari soal berdasarkan ID
-    $question = Question::find($questionId);
+        // Cari soal berdasarkan ID
+        $question = Question::find($questionId);
 
-    if (!$question) {
+        if (!$question) {
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Question not found',
+                ],
+                404,
+            );
+        }
+
+        // Cek jawaban yang benar
+        $correctAnswer = $question->answers()->where('is_correct', true)->first();
+        $isCorrect = $correctAnswer && $correctAnswer->id == $validated['answer_id'];
+
+        // Hitung EXP yang didapat (hanya jika jawaban benar)
+        $earnedExp = $isCorrect ? 100000 : 0; // 10 EXP per jawaban benar
+
+        // Update EXP, Level, dan League pengguna
+        $user = User::findOrFail($validated['user_id']);
+        $user->exp += $earnedExp;
+
+        // Update level dan league berdasarkan EXP
+        $user->level = User::determineLevel($user->exp);
+        $user->league = User::determineLeague($user->exp);
+
+        $user->save();
+
         return response()->json([
-            'statusCode' => 404,
-            'message' => 'Question not found',
-        ], 404);
+            'statusCode' => 200,
+            'message' => $isCorrect ? 'Correct answer!' : 'Incorrect answer!',
+            'data' => [
+                'is_correct' => $isCorrect,
+                'earned_exp' => $earnedExp,
+                'user' => [
+                    'id' => $user->id,
+                    'exp' => $user->exp,
+                    'level' => $user->level,
+                    'league' => $user->league,
+                ],
+            ],
+        ]);
     }
-
-    // Cek jawaban yang benar
-    $correctAnswer = $question->answers()->where('is_correct', true)->first();
-
-    $correctAnswersCount = 0;
-
-    if ($correctAnswer && $correctAnswer->id == $validated['answer_id']) {
-        $correctAnswersCount++;
-    }
-
-    // Tambahkan EXP ke pengguna
-    $user = User::find($validated['user_id']);
-    $earnedExp = $correctAnswersCount * 10; // 10 EXP per jawaban benar
-    $user->exp += $earnedExp;
-
-    // Perbarui level pengguna (opsional)
-    $levelThreshold = 100; // EXP yang diperlukan untuk naik level
-    while ($user->exp >= $levelThreshold) {
-        $user->exp -= $levelThreshold;
-        $user->level++;
-    }
-
-    $user->save();
-
-    return response()->json([
-        'statusCode' => 200,
-        'message' => 'Answer submitted successfully',
-        'data' => [
-            'correct_answers' => $correctAnswersCount,
-            'earned_exp' => $earnedExp,
-            'user' => $user,
-        ],
-    ]);
-}
-
 }

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('password');
             $table->unsignedBigInteger('exp')->default(0); 
             $table->unsignedInteger('level')->default(1);
+            $table->string('league')->default('bronze');
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();

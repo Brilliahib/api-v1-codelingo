@@ -25,10 +25,7 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
     /**
      * The attributes that should be cast.
@@ -38,6 +35,39 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Update league based on exp before saving.
+     */
+    protected static function booted()
+    {
+        static::saving(function ($user) {
+            $user->level = self::determineLevel($user->exp);
+            $user->league = self::determineLeague($user->exp);
+        });
+    }
+
+    /**
+     * Determine the league based on exp.
+     */
+    public static function determineLeague($exp): string
+    {
+        if ($exp >= 10000) {
+            return 'diamond';
+        } elseif ($exp >= 5000) {
+            return 'emerald';
+        } elseif ($exp >= 2000) {
+            return 'gold';
+        } elseif ($exp >= 1000) {
+            return 'silver';
+        }
+        return 'bronze';
+    }
+
+    public static function determineLevel($exp): int
+    {
+        return min(99, intdiv($exp, 1000) + 1);
+    }
 
     public function getJWTIdentifier()
     {
@@ -52,7 +82,7 @@ class User extends Authenticatable implements JWTSubject
     public function completedSections()
     {
         return $this->belongsToMany(Section::class, 'user_section_progress')
-                    ->withPivot('is_completed')
-                    ->withTimestamps();
+            ->withPivot('is_completed')
+            ->withTimestamps();
     }
 }
