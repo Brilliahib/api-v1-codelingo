@@ -35,23 +35,27 @@ class LearningPathController extends Controller
     }
 
     // Show a single learning path
-    public function show($id)
-    {
-        $learningPath = LearningPath::find($id);
-        if (!$learningPath) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Learning path not found',
-                'data' => null
-            ], 404);
-        }
+// Show a single learning path with materials and quizzes
+public function show($id)
+{
+    // Fetch the learning path along with its materials and quizzes
+    $learningPath = LearningPath::with(['materials', 'quizzes'])->find($id);
 
+    if (!$learningPath) {
         return response()->json([
-            'statusCode' => 200,
-            'message' => 'Learning path retrieved successfully',
-            'data' => $learningPath
-        ], 200);
+            'statusCode' => 404,
+            'message' => 'Learning path not found',
+            'data' => null
+        ], 404);
     }
+
+    return response()->json([
+        'statusCode' => 200,
+        'message' => 'Learning path retrieved successfully',
+        'data' => $learningPath
+    ], 200);
+}
+
 
     // Update a learning path
     public function update(Request $request, $id)

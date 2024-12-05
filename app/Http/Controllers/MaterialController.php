@@ -24,8 +24,8 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'learning_path_id' => 'required|exists:learning_paths,id',
             'title' => 'required|string|max:255',
-            'image' => 'required|string',
-            'content' => 'required|string',
+            'material_image' => 'nullable|string',
+            'material_text' => 'required|string',
         ]);
 
         $material = Material::create($validated);
@@ -69,8 +69,8 @@ class MaterialController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'required|string',
-            'content' => 'required|string',
+            'material_image' => 'nullable|string',
+            'material_text' => 'required|string',
         ]);
 
         $material->update($validated);

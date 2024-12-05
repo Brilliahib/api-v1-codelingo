@@ -3,13 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class QuestionController extends Controller
 {
     public function index($quizId)
     {
-        $questions = Question::where('quiz_id', $quizId)->get();
+        $questions = Question::with('answers')->where('quiz_id', $quizId)->get();
+
         return response()->json([
             'statusCode' => 200,
             'message' => 'Questions retrieved successfully',
@@ -23,8 +25,8 @@ class QuestionController extends Controller
             'quiz_id' => 'required|exists:quizzes,id',
             'question_text' => 'required|string',
             'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'answers' => 'required|array',
-            'answers.*.text' => 'required|string',
+            'answers' => 'required|array|min:2', // Minimal 2 jawaban
+            'answers.*.answer_text' => 'required|string',
             'answers.*.is_correct' => 'required|boolean',
         ]);
 
@@ -34,17 +36,29 @@ class QuestionController extends Controller
             $validated['question_image'] = 'public/' . $imagePath;
         }
 
-        $question = Question::create($validated);
+        // Buat pertanyaan
+        $question = Question::create([
+            'quiz_id' => $validated['quiz_id'],
+            'question_text' => $validated['question_text'],
+            'question_image' => $validated['question_image'] ?? null,
+        ]);
+
+        // Tambahkan jawaban
+        foreach ($validated['answers'] as $answer) {
+            $question->answers()->create($answer);
+        }
+
         return response()->json([
             'statusCode' => 201,
-            'message' => 'Question created successfully',
-            'data' => $question,
+            'message' => 'Question and answers created successfully',
+            'data' => $question->load('answers'),
         ]);
     }
 
     public function show($id)
     {
-        $question = Question::find($id);
+        $question = Question::with('answers')->find($id);
+
         if (!$question) {
             return response()->json(
                 [
@@ -66,6 +80,7 @@ class QuestionController extends Controller
     public function update(Request $request, $id)
     {
         $question = Question::find($id);
+
         if (!$question) {
             return response()->json(
                 [
@@ -79,9 +94,9 @@ class QuestionController extends Controller
 
         $validated = $request->validate([
             'question_text' => 'required|string',
-            'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', 
-            'answers' => 'required|array',
-            'answers.*.text' => 'required|string',
+            'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'answers' => 'required|array|min:2',
+            'answers.*.answer_text' => 'required|string',
             'answers.*.is_correct' => 'required|boolean',
         ]);
 
@@ -89,7 +104,7 @@ class QuestionController extends Controller
             if ($question->question_image) {
                 $oldImagePath = public_path('storage/' . $question->question_image);
                 if (file_exists($oldImagePath)) {
-                    unlink($oldImagePath); 
+                    unlink($oldImagePath);
                 }
             }
 
@@ -98,12 +113,22 @@ class QuestionController extends Controller
             $validated['question_image'] = 'public/' . $imagePath;
         }
 
-        $question->update($validated);
+        // Update pertanyaan
+        $question->update([
+            'question_text' => $validated['question_text'],
+            'question_image' => $validated['question_image'] ?? $question->question_image,
+        ]);
+
+        // Update jawaban (hapus semua dulu, lalu tambahkan kembali)
+        $question->answers()->delete();
+        foreach ($validated['answers'] as $answer) {
+            $question->answers()->create($answer);
+        }
 
         return response()->json([
             'statusCode' => 200,
-            'message' => 'Question updated successfully',
-            'data' => $question,
+            'message' => 'Question and answers updated successfully',
+            'data' => $question->load('answers'),
         ]);
     }
 
@@ -128,4 +153,57 @@ class QuestionController extends Controller
             'data' => null,
         ]);
     }
+
+    public function submitSingleQuestion(Request $request, $questionId)
+{
+    // Validasi input
+    $validated = $request->validate([
+        'user_id' => 'required|exists:users,id',
+        'answer_id' => 'required|exists:answers,id',
+    ]);
+
+    // Cari soal berdasarkan ID
+    $question = Question::find($questionId);
+
+    if (!$question) {
+        return response()->json([
+            'statusCode' => 404,
+            'message' => 'Question not found',
+        ], 404);
+    }
+
+    // Cek jawaban yang benar
+    $correctAnswer = $question->answers()->where('is_correct', true)->first();
+
+    $correctAnswersCount = 0;
+
+    if ($correctAnswer && $correctAnswer->id == $validated['answer_id']) {
+        $correctAnswersCount++;
+    }
+
+    // Tambahkan EXP ke pengguna
+    $user = User::find($validated['user_id']);
+    $earnedExp = $correctAnswersCount * 10; // 10 EXP per jawaban benar
+    $user->exp += $earnedExp;
+
+    // Perbarui level pengguna (opsional)
+    $levelThreshold = 100; // EXP yang diperlukan untuk naik level
+    while ($user->exp >= $levelThreshold) {
+        $user->exp -= $levelThreshold;
+        $user->level++;
+    }
+
+    $user->save();
+
+    return response()->json([
+        'statusCode' => 200,
+        'message' => 'Answer submitted successfully',
+        'data' => [
+            'correct_answers' => $correctAnswersCount,
+            'earned_exp' => $earnedExp,
+            'user' => $user,
+        ],
+    ]);
+}
+
 }

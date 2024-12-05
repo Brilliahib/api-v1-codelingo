@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LearningPathController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\QuestionController;
@@ -29,6 +30,9 @@ Route::prefix('auth')->group(function () {
 
 // Protected routes for users (requires authentication)
 Route::middleware('auth:api')->group(function () {
+    Route::get('/auth/get-auth', [AuthController::class, 'getAuth']);
+    Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/auth/update-account', [AuthController::class, 'updateAccount']);
     // Learning Path routes
     Route::prefix('learning-paths')->group(function () {
         Route::get('/', [LearningPathController::class, 'index']);
@@ -68,14 +72,19 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('questions')->group(function () {
         Route::get('/{quizId}', [QuestionController::class, 'index']);
         Route::post('/', [QuestionController::class, 'store']);
-        Route::get('/{id}', [QuestionController::class, 'show']);
+        Route::get('/detail/{id}', [QuestionController::class, 'show']);
         Route::put('/{id}', [QuestionController::class, 'update']);
         Route::delete('/{id}', [QuestionController::class, 'destroy']);
+        Route::post('/submit/{questionId}', [QuestionController::class, 'submitSingleQuestion']);
     });    
 
     // User Section Progress routes
     Route::prefix('progress')->group(function () {
         Route::get('/{userId}', [UserSectionProgressController::class, 'index']);
         Route::post('/complete', [UserSectionProgressController::class, 'complete']);
+    });
+
+    Route::prefix('leaderboard')->group(function () {
+        Route::get('/', [LeaderboardController::class, 'getTopUsers']);
     });
 });

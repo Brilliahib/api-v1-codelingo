@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('learning_path_id')->constrained('learning_paths')->onDelete('cascade'); 
             $table->string('title'); 
-            $table->string('image'); 
-            $table->text('content');
+            $table->string('material_image')->nullable(); 
+            $table->text('material_text')->nullable();
             $table->string('type')->default('material');
             $table->timestamps();
         });
