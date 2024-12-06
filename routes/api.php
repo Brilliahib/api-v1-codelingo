@@ -7,6 +7,7 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\SectionController;
+use App\Http\Controllers\UserLearningPathController;
 use App\Http\Controllers\UserSectionProgressController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -92,5 +93,10 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/gold', [LeaderboardController::class, 'getGoldUsers']); 
         Route::get('/emerald', [LeaderboardController::class, 'getEmeraldUsers']); 
         Route::get('/diamond', [LeaderboardController::class, 'getDiamondUsers']); 
-    });    
+    });
+    
+    Route::prefix('user-learning-path')->group(function () {
+        Route::get('/', [UserLearningPathController::class, 'getAllUserLearningPaths']);
+        Route::get('/{userLearningPath}', [UserLearningPathController::class, 'getAllUserLearningPaths']);
+    });
 });

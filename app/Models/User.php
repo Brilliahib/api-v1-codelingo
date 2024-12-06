@@ -45,6 +45,37 @@ class User extends Authenticatable implements JWTSubject
             $user->level = self::determineLevel($user->exp);
             $user->league = self::determineLeague($user->exp);
         });
+
+        static::created(function ($user) {
+            $learningPaths = LearningPath::all();
+
+            foreach ($learningPaths as $learningPath) {
+                $userLearningPath = UserLearningPath::create([
+                    'user_id' => $user->id,
+                    'learning_path_id' => $learningPath->id,
+                ]);
+
+                $hasAnyMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)->exists();
+                foreach ($learningPath->materials as $material) {
+                    UserMaterial::create([
+                        'user_learning_path_id' => $userLearningPath->id,
+                        'material_id' => $material->id,
+                        'is_completed' => false,
+                        'is_unlocked' => !$hasAnyMaterial,
+                    ]);
+
+                    $hasAnyMaterial = true; 
+                }
+
+                foreach ($learningPath->quizzes as $quiz) {
+                    UserQuiz::create([
+                        'user_learning_path_id' => $userLearningPath->id,
+                        'quiz_id' => $quiz->id,
+                        'is_unlocked' => false,
+                    ]);
+                }
+            }
+        });
     }
 
     /**
@@ -84,5 +115,10 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsToMany(Section::class, 'user_section_progress')
             ->withPivot('is_completed')
             ->withTimestamps();
+    }
+
+    public function learningPaths()
+    {
+        return $this->hasMany(UserLearningPath::class);
     }
 }

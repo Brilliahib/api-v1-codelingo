@@ -19,4 +19,9 @@ class LearningPath extends Model
     {
         return $this->hasMany(Quiz::class);
     }
+
+    public function userLearningPaths()
+    {
+        return $this->hasMany(UserLearningPath::class);
+    }
 }

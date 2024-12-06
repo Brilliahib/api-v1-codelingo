@@ -11,7 +11,7 @@ class Quiz extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
-    public $incrementing = false; 
+    public $incrementing = false;
     protected $keyType = 'string';
 
     protected static function boot()
@@ -32,5 +32,27 @@ class Quiz extends Model
     public function questions()
     {
         return $this->hasMany(Question::class, 'quiz_id', 'id');
+    }
+
+    public function userQuizzes()
+    {
+        return $this->hasMany(UserQuiz::class);
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($quiz) {
+            $learningPathId = $quiz->learning_path_id;
+
+            $userLearningPaths = UserLearningPath::where('learning_path_id', $learningPathId)->get();
+
+            foreach ($userLearningPaths as $userLearningPath) {
+                UserQuiz::create([
+                    'user_learning_path_id' => $userLearningPath->id,
+                    'quiz_id' => $quiz->id,
+                    'is_unlocked' => false,
+                ]);
+            }
+        });
     }
 }
