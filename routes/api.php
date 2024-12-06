@@ -97,6 +97,7 @@ Route::middleware('auth:api')->group(function () {
     
     Route::prefix('user-learning-path')->group(function () {
         Route::get('/', [UserLearningPathController::class, 'getAllUserLearningPaths']);
-        Route::get('/{userLearningPath}', [UserLearningPathController::class, 'getAllUserLearningPaths']);
+        Route::get('/detail/{userLearningPath}', [UserLearningPathController::class, 'getAllUserLearningPaths']);
+        Route::get('/complete', [UserLearningPathController::class, 'getCompletedUserLearningPaths']);
     });
 });

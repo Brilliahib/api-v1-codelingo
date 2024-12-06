@@ -180,7 +180,7 @@ class QuestionController extends Controller
         $isCorrect = $correctAnswer && $correctAnswer->id == $validated['answer_id'];
 
         // Hitung EXP yang didapat (hanya jika jawaban benar)
-        $earnedExp = $isCorrect ? 100000 : 0; // 10 EXP per jawaban benar
+        $earnedExp = $isCorrect ? 200 : 0; // 10 EXP per jawaban benar
 
         // Update EXP, Level, dan League pengguna
         $user = User::findOrFail($validated['user_id']);
