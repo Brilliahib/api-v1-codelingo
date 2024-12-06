@@ -8,6 +8,7 @@ use Illuminate\Http\Response;
 
 class UserLearningPathController extends Controller
 {
+    // Get All Learning Path from Users
     public function getAllUserLearningPaths()
     {
         $user = auth()->user();
@@ -51,15 +52,9 @@ class UserLearningPathController extends Controller
         );
     }
 
-    /**
-     * Mendapatkan detail UserLearningPath
-     *
-     * @param  \App\Models\UserLearningPath  $userLearningPath
-     * @return \Illuminate\Http\JsonResponse
-     */
+    // Get Detail Learning Path between User
     public function getUserLearningPathDetail(UserLearningPath $userLearningPath)
     {
-        // Memuat relasi user, learningPath, userMaterials dan userQuizzes
         $userLearningPath->load(['user', 'learningPath', 'userMaterials.material', 'userQuizzes.quiz']);
 
         return response()->json(
@@ -72,6 +67,7 @@ class UserLearningPathController extends Controller
         );
     }
 
+    // Get progress learning path users
     public function getUserLearningPathProgress(UserLearningPath $userLearningPath)
     {
         $userLearningPath->load(['userMaterials', 'userQuizzes']);
@@ -102,6 +98,7 @@ class UserLearningPathController extends Controller
         );
     }
 
+    // Get Completed Learning Path from Users
     public function getCompletedUserLearningPaths()
     {
         $userLearningPaths = UserLearningPath::with(['learningPath', 'userMaterials', 'userQuizzes'])->get();

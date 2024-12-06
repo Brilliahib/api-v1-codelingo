@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Material;
+use App\Models\UserLearningPath;
+use App\Models\UserMaterial;
 use Illuminate\Http\Request;
 
 class MaterialController extends Controller
@@ -11,11 +13,14 @@ class MaterialController extends Controller
     public function index($learningPathId)
     {
         $materials = Material::where('learning_path_id', $learningPathId)->get();
-        return response()->json([
-            'statusCode' => 200,
-            'message' => 'Materials retrieved successfully',
-            'data' => $materials
-        ], 200);
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Materials retrieved successfully',
+                'data' => $materials,
+            ],
+            200,
+        );
     }
 
     // Create a new material
@@ -29,11 +34,14 @@ class MaterialController extends Controller
         ]);
 
         $material = Material::create($validated);
-        return response()->json([
-            'statusCode' => 201,
-            'message' => 'Material created successfully',
-            'data' => $material
-        ], 201);
+        return response()->json(
+            [
+                'statusCode' => 201,
+                'message' => 'Material created successfully',
+                'data' => $material,
+            ],
+            201,
+        );
     }
 
     // Show a single material
@@ -41,18 +49,24 @@ class MaterialController extends Controller
     {
         $material = Material::find($id);
         if (!$material) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Material not found',
-                'data' => null
-            ], 404);
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Material not found',
+                    'data' => null,
+                ],
+                404,
+            );
         }
 
-        return response()->json([
-            'statusCode' => 200,
-            'message' => 'Material retrieved successfully',
-            'data' => $material
-        ], 200);
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Material retrieved successfully',
+                'data' => $material,
+            ],
+            200,
+        );
     }
 
     // Update a material
@@ -60,11 +74,14 @@ class MaterialController extends Controller
     {
         $material = Material::find($id);
         if (!$material) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Material not found',
-                'data' => null
-            ], 404);
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Material not found',
+                    'data' => null,
+                ],
+                404,
+            );
         }
 
         $validated = $request->validate([
@@ -74,11 +91,14 @@ class MaterialController extends Controller
         ]);
 
         $material->update($validated);
-        return response()->json([
-            'statusCode' => 200,
-            'message' => 'Material updated successfully',
-            'data' => $material
-        ], 200);
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Material updated successfully',
+                'data' => $material,
+            ],
+            200,
+        );
     }
 
     // Delete a material
@@ -86,18 +106,88 @@ class MaterialController extends Controller
     {
         $material = Material::find($id);
         if (!$material) {
-            return response()->json([
-                'statusCode' => 404,
-                'message' => 'Material not found',
-                'data' => null
-            ], 404);
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'Material not found',
+                    'data' => null,
+                ],
+                404,
+            );
         }
 
         $material->delete();
-        return response()->json([
-            'statusCode' => 200,
-            'message' => 'Material deleted successfully',
-            'data' => null
-        ], 200);
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Material deleted successfully',
+                'data' => null,
+            ],
+            200,
+        );
+    }
+
+    // Check material is completed
+    public function submitMaterial($materialId)
+    {
+        $user = auth()->user();
+
+        $userLearningPath = UserLearningPath::where('user_id', $user->id)
+            ->whereHas('userMaterials', function ($query) use ($materialId) {
+                $query->where('material_id', $materialId);
+            })
+            ->first();
+
+        if (!$userLearningPath) {
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'User learning path not found for the given material',
+                    'data' => null,
+                ],
+                404,
+            );
+        }
+
+        $userMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
+            ->where('material_id', $materialId)
+            ->first();
+
+        if (!$userMaterial) {
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'User material not found',
+                    'data' => null,
+                ],
+                404,
+            );
+        }
+
+        $userMaterial->update(['is_completed' => true]);
+
+        $nextMaterial = Material::where('learning_path_id', $userLearningPath->learning_path_id)
+            ->where('id', '>', $materialId)
+            ->orderBy('id') 
+            ->first();
+
+        if ($nextMaterial) {
+            $nextUserMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
+                ->where('material_id', $nextMaterial->id)
+                ->first();
+
+            if ($nextUserMaterial) {
+                $nextUserMaterial->update(['is_unlocked' => true]);
+            }
+        }
+
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Material marked as completed and next material unlocked',
+                'data' => $userMaterial,
+            ],
+            200,
+        );
     }
 }

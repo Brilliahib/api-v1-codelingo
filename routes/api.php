@@ -50,6 +50,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/detail/{id}', [MaterialController::class, 'show']);
         Route::put('/{id}', [MaterialController::class, 'update'])->middleware('role:admin');
         Route::delete('/{id}', [MaterialController::class, 'destroy'])->middleware('role:admin');
+        Route::post('/{materialId}/submit', [MaterialController::class, 'submitMaterial']);
     });
 
     // Quiz routes
@@ -97,7 +98,8 @@ Route::middleware('auth:api')->group(function () {
     
     Route::prefix('user-learning-path')->group(function () {
         Route::get('/', [UserLearningPathController::class, 'getAllUserLearningPaths']);
-        Route::get('/detail/{userLearningPath}', [UserLearningPathController::class, 'getAllUserLearningPaths']);
+        Route::get('/detail/{userLearningPath}', [UserLearningPathController::class, 'getUserLearningPathDetail']);
+        Route::get('/progress/{userLearningPath}', [UserLearningPathController::class, 'getUserLearningPathProgress']);
         Route::get('/complete', [UserLearningPathController::class, 'getCompletedUserLearningPaths']);
     });
 });
