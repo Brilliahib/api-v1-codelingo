@@ -156,13 +156,11 @@ class QuestionController extends Controller
 
     public function submitSingleQuestion(Request $request, $questionId)
     {
-        // Validasi input
         $validated = $request->validate([
             'user_id' => 'required|exists:users,id',
             'answer_id' => 'required|exists:answers,id',
         ]);
 
-        // Cari soal berdasarkan ID
         $question = Question::find($questionId);
 
         if (!$question) {
@@ -175,18 +173,14 @@ class QuestionController extends Controller
             );
         }
 
-        // Cek jawaban yang benar
         $correctAnswer = $question->answers()->where('is_correct', true)->first();
         $isCorrect = $correctAnswer && $correctAnswer->id == $validated['answer_id'];
 
-        // Hitung EXP yang didapat (hanya jika jawaban benar)
-        $earnedExp = $isCorrect ? 200 : 0; // 10 EXP per jawaban benar
+        $earnedExp = $isCorrect ? 200 : 0; 
 
-        // Update EXP, Level, dan League pengguna
         $user = User::findOrFail($validated['user_id']);
         $user->exp += $earnedExp;
 
-        // Update level dan league berdasarkan EXP
         $user->level = User::determineLevel($user->exp);
         $user->league = User::determineLeague($user->exp);
 

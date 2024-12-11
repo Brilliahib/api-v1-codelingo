@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Material;
+use App\Models\User;
 use App\Models\UserLearningPath;
 use App\Models\UserMaterial;
 use Illuminate\Http\Request;
@@ -164,11 +165,35 @@ class MaterialController extends Controller
             );
         }
 
+        if ($userMaterial->is_completed) {
+            return response()->json(
+                [
+                    'statusCode' => 200,
+                    'message' => 'Material already completed',
+                    'data' => $userMaterial,
+                ],
+                200,
+            );
+        }
+
+        // Update is_completed to true
         $userMaterial->update(['is_completed' => true]);
 
+        // Tambahkan EXP ke user
+        $earnedExp = 100; // Misalnya setiap materi memberikan 100 EXP
+        $user->exp += $earnedExp;
+
+        // Tentukan level dan league baru user berdasarkan EXP yang baru
+        $user->level = User::determineLevel($user->exp);
+        $user->league = User::determineLeague($user->exp);
+
+        // Simpan perubahan EXP, level, dan league
+        $user->save();
+
+        // Unlock next material if available
         $nextMaterial = Material::where('learning_path_id', $userLearningPath->learning_path_id)
             ->where('id', '>', $materialId)
-            ->orderBy('id') 
+            ->orderBy('id')
             ->first();
 
         if ($nextMaterial) {
@@ -184,8 +209,16 @@ class MaterialController extends Controller
         return response()->json(
             [
                 'statusCode' => 200,
-                'message' => 'Material marked as completed and next material unlocked',
-                'data' => $userMaterial,
+                'message' => 'Material marked as completed, EXP added, and next material unlocked',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'exp' => $user->exp,
+                        'level' => $user->level,
+                        'league' => $user->league,
+                    ],
+                    'userMaterial' => $userMaterial,
+                ],
             ],
             200,
         );

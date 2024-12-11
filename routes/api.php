@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LearningPathController;
@@ -78,7 +79,7 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [QuestionController::class, 'update']);
         Route::delete('/{id}', [QuestionController::class, 'destroy']);
         Route::post('/submit/{questionId}', [QuestionController::class, 'submitSingleQuestion']);
-    });    
+    });
 
     // User Section Progress routes
     Route::prefix('progress')->group(function () {
@@ -88,18 +89,25 @@ Route::middleware('auth:api')->group(function () {
 
     Route::prefix('leaderboard')->group(function () {
         Route::get('/', [LeaderboardController::class, 'getTopUsers']);
-        Route::get('/next-league', [LeaderboardController::class, 'getNextLeagueProgress']); 
+        Route::get('/next-league', [LeaderboardController::class, 'getNextLeagueProgress']);
         Route::get('/bronze', [LeaderboardController::class, 'getBronzeUsers']);
-        Route::get('/silver', [LeaderboardController::class, 'getSilverUsers']); 
-        Route::get('/gold', [LeaderboardController::class, 'getGoldUsers']); 
-        Route::get('/emerald', [LeaderboardController::class, 'getEmeraldUsers']); 
-        Route::get('/diamond', [LeaderboardController::class, 'getDiamondUsers']); 
+        Route::get('/silver', [LeaderboardController::class, 'getSilverUsers']);
+        Route::get('/gold', [LeaderboardController::class, 'getGoldUsers']);
+        Route::get('/emerald', [LeaderboardController::class, 'getEmeraldUsers']);
+        Route::get('/diamond', [LeaderboardController::class, 'getDiamondUsers']);
     });
-    
+
     Route::prefix('user-learning-path')->group(function () {
         Route::get('/', [UserLearningPathController::class, 'getAllUserLearningPaths']);
         Route::get('/detail/{userLearningPath}', [UserLearningPathController::class, 'getUserLearningPathDetail']);
         Route::get('/progress/{userLearningPath}', [UserLearningPathController::class, 'getUserLearningPathProgress']);
         Route::get('/complete', [UserLearningPathController::class, 'getCompletedUserLearningPaths']);
+    });
+
+    Route::prefix('users')->group(function () {
+        Route::get('/', [AdminController::class, 'getAllUsers'])->middleware('role:admin'); 
+        Route::get('/{id}', [AdminController::class, 'getUserDetail'])->middleware('role:admin'); 
+        Route::delete('/{id}', [AdminController::class, 'deleteUser'])->middleware('role:admin'); 
+        Route::put('/{id}', [AdminController::class, 'updateUser'])->middleware('role:admin');
     });
 });

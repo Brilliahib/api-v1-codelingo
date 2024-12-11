@@ -24,14 +24,14 @@ class LeaderboardController extends Controller
             return response()->json([
                 'statusCode' => 200,
                 'message' => '10 user dengan exp tertinggi ditemukan',
-                'data' => $topUsers
+                'data' => $topUsers,
             ]);
         }
 
         return response()->json([
             'statusCode' => 404,
             'message' => 'Tidak ada user ditemukan',
-            'data' => []
+            'data' => [],
         ]);
     }
 
@@ -63,70 +63,69 @@ class LeaderboardController extends Controller
 
     private function getUsersByLeague(string $league)
     {
-        $users = User::where('league', $league)
-            ->orderBy('exp', 'desc')
-            ->take(10)
-            ->get();
+        $users = User::where('league', $league)->orderBy('exp', 'desc')->take(10)->get();
 
         if ($users->isNotEmpty()) {
             return response()->json([
                 'statusCode' => 200,
                 'message' => "10 user dengan liga $league ditemukan",
-                'data' => $users
+                'data' => $users,
             ]);
         }
 
         return response()->json([
             'statusCode' => 404,
             'message' => "Tidak ada user dalam liga $league ditemukan",
-            'data' => []
+            'data' => [],
         ]);
     }
-    
+
     public function getNextLeagueProgress(Request $request)
-{
-    // Ambil user yang sedang login
-    $user = $request->user();
+    {
+        // Ambil user yang sedang login
+        $user = $request->user();
 
-    if (!$user) {
-        return response()->json([
-            'statusCode' => 401,
-            'message' => 'User not authenticated',
-        ], 401);
-    }
+        if (!$user) {
+            return response()->json(
+                [
+                    'statusCode' => 401,
+                    'message' => 'User not authenticated',
+                ],
+                401,
+            );
+        }
 
-    $currentLeague = $user->league;
-    $currentExp = $user->exp;
+        $currentLeague = $user->league;
+        $currentExp = $user->exp;
 
-    $thresholds = self::LEAGUE_EXP_THRESHOLDS;
+        $thresholds = self::LEAGUE_EXP_THRESHOLDS;
 
-    // Cek apakah user sudah berada di liga tertinggi
-    if ($currentLeague === 'diamond') {
+        // Cek apakah user sudah berada di liga tertinggi
+        if ($currentLeague === 'diamond') {
+            return response()->json([
+                'statusCode' => 200,
+                'message' => 'User sudah berada di liga tertinggi (Diamond)',
+                'progress' => 100,
+            ]);
+        }
+
+        // Dapatkan ambang batas liga saat ini dan berikutnya
+        $currentThreshold = $thresholds[$currentLeague] ?? 0;
+        $nextLeague = $this->getNextLeague($currentLeague);
+        $nextThreshold = $thresholds[$nextLeague] ?? 0;
+
+        // Hitung progres dalam persen
+        $progress = (($currentExp - $currentThreshold) / ($nextThreshold - $currentThreshold)) * 100;
+        $progress = round($progress, 2); // Pembulatan 2 desimal
+
         return response()->json([
             'statusCode' => 200,
-            'message' => 'User sudah berada di liga tertinggi (Diamond)',
-            'progress' => 100,
+            'message' => "Progress menuju liga $nextLeague",
+            'progress' => $progress > 100 ? 100 : $progress, // Maksimal 100%
+            'current_league' => $currentLeague,
+            'next_league' => $nextLeague,
         ]);
     }
-
-    // Dapatkan ambang batas liga saat ini dan berikutnya
-    $currentThreshold = $thresholds[$currentLeague] ?? 0;
-    $nextLeague = $this->getNextLeague($currentLeague);
-    $nextThreshold = $thresholds[$nextLeague] ?? 0;
-
-    // Hitung progres dalam persen
-    $progress = ($currentExp - $currentThreshold) / ($nextThreshold - $currentThreshold) * 100;
-    $progress = round($progress, 2); // Pembulatan 2 desimal
-
-    return response()->json([
-        'statusCode' => 200,
-        'message' => "Progress menuju liga $nextLeague",
-        'progress' => $progress > 100 ? 100 : $progress, // Maksimal 100%
-        'current_league' => $currentLeague,
-        'next_league' => $nextLeague,
-    ]);
-}
-
 
     private function getNextLeague(string $currentLeague): string
     {

@@ -57,6 +57,20 @@ class UserLearningPathController extends Controller
     {
         $userLearningPath->load(['user', 'learningPath', 'userMaterials.material', 'userQuizzes.quiz']);
 
+        // Menghitung progress untuk userLearningPath
+        $completedMaterials = $userLearningPath->userMaterials->where('is_completed', true)->count();
+        $totalMaterials = $userLearningPath->userMaterials->count();
+
+        $completedQuizzes = $userLearningPath->userQuizzes->where('is_completed', true)->count();
+        $totalQuizzes = $userLearningPath->userQuizzes->count();
+
+        $totalCompleted = $completedMaterials + $completedQuizzes;
+        $totalItems = $totalMaterials + $totalQuizzes;
+        $progress_status = $totalItems > 0 ? ($totalCompleted / $totalItems) * 100 : 0;
+
+        // Menambahkan progress_status ke dalam data userLearningPath
+        $userLearningPath->progress_status = round($progress_status, 2);
+
         return response()->json(
             [
                 'statusCode' => 200,
