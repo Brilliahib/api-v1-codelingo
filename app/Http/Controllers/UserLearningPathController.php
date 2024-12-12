@@ -56,21 +56,21 @@ class UserLearningPathController extends Controller
     {
         // Load relasi yang diperlukan
         $userLearningPath->load(['learningPath', 'learningPath.materials', 'learningPath.quizzes', 'userMaterials.material', 'userQuizzes.quiz']);
-
+    
         // Menghitung jumlah material dan quiz yang telah diselesaikan
         $completedMaterials = $userLearningPath->userMaterials->where('is_completed', true)->count();
         $totalMaterials = $userLearningPath->userMaterials->count();
-
+    
         $completedQuizzes = $userLearningPath->userQuizzes->where('is_completed', true)->count();
         $totalQuizzes = $userLearningPath->userQuizzes->count();
-
+    
         // Menghitung total progres
         $totalCompleted = $completedMaterials + $completedQuizzes;
         $totalItems = $totalMaterials + $totalQuizzes;
         $progress_status = $totalItems > 0 ? ($totalCompleted / $totalItems) * 100 : 0;
-
+    
         $userLearningPath->progress_status = round($progress_status, 2);
-
+    
         // Menggabungkan data material dan quiz dari learningPath dan user
         $combinedItems = $userLearningPath->learningPath->materials
             ->map(function ($material) use ($userLearningPath) {
@@ -87,32 +87,31 @@ class UserLearningPathController extends Controller
                     'material_image' => $material->material_image,
                     'material_text' => $material->material_text,
                 ];
+            });
+    
+        // Tambahkan data quiz setelah material
+        $combinedItems = $combinedItems->merge(
+            $userLearningPath->learningPath->quizzes->map(function ($quiz) use ($userLearningPath) {
+                $userQuiz = $userLearningPath->userQuizzes->where('quiz_id', $quiz->id)->first();
+                return [
+                    'id' => $quiz->id,
+                    'type' => 'quiz',
+                    'title' => $quiz->title,
+                    'is_completed' => $userQuiz ? $userQuiz->is_completed : false, // Status selesai dari user
+                    'is_unlocked' => $userQuiz ? $userQuiz->is_unlocked : false, // Status unlocked dari user
+                    'created_at' => $userQuiz ? $userQuiz->created_at : null,
+                    'updated_at' => $userQuiz ? $userQuiz->updated_at : null,
+                    'quiz_description' => $quiz->description,
+                ];
             })
-            ->merge(
-                $userLearningPath->learningPath->quizzes->map(function ($quiz) use ($userLearningPath) {
-                    $userQuiz = $userLearningPath->userQuizzes->where('quiz_id', $quiz->id)->first();
-                    return [
-                        'id' => $quiz->id,
-                        'type' => 'quiz',
-                        'title' => $quiz->title,
-                        'is_completed' => $userQuiz ? $userQuiz->is_completed : false, // Status selesai dari user
-                        'is_unlocked' => $userQuiz ? $userQuiz->is_unlocked : false, // Status unlocked dari user
-                        'created_at' => $userQuiz ? $userQuiz->created_at : null,
-                        'updated_at' => $userQuiz ? $userQuiz->updated_at : null,
-                        'quiz_description' => $quiz->description,
-                    ];
-                }),
-            );
-
-        // Urutkan berdasarkan created_at
-        $combinedItems = $combinedItems->sortBy('created_at');
-
+        );
+    
         // Menyimpan title dari learningPath sebelum menggunakan only
         $learningPathTitle = $userLearningPath->learningPath->title;
-
+    
         // Menggunakan only untuk mengurangi data yang dikembalikan
         $userLearningPath = $userLearningPath->only('id', 'user_id', 'learning_path_id', 'progress_status', 'created_at', 'updated_at');
-
+    
         // Menambahkan title dari learningPath ke dalam array yang dikembalikan
         return response()->json(
             [
@@ -129,6 +128,7 @@ class UserLearningPathController extends Controller
             Response::HTTP_OK,
         );
     }
+    
 
     // Get progress learning path users
     public function getUserLearningPathProgress(UserLearningPath $userLearningPath)
