@@ -35,4 +35,32 @@ class UserMaterial extends Model
             ]);
         }
     }
+
+    protected static function booted()
+    {
+        static::updated(function ($userMaterial) {
+            if ($userMaterial->is_completed) {
+                $learningPathId = $userMaterial->material->learningPath->id;
+                $allMaterialsCompleted = UserMaterial::where('user_learning_path_id', $userMaterial->user_learning_path_id)
+                    ->where('is_completed', false)
+                    ->doesntExist();
+
+                if ($allMaterialsCompleted) {
+                    $firstQuiz = Quiz::where('learning_path_id', $learningPathId)->orderBy('id')->first();
+
+                    if ($firstQuiz) {
+                        UserQuiz::firstOrCreate(
+                            [
+                                'user_learning_path_id' => $userMaterial->user_learning_path_id,
+                                'quiz_id' => $firstQuiz->id,
+                            ],
+                            [
+                                'is_unlocked' => true,
+                            ],
+                        );
+                    }
+                }
+            }
+        });
+    }
 }

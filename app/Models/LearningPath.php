@@ -24,4 +24,18 @@ class LearningPath extends Model
     {
         return $this->hasMany(UserLearningPath::class);
     }
+
+    protected static function booted()
+    {
+        static::created(function ($learningPath) {
+            $users = User::all();
+
+            foreach ($users as $user) {
+                UserLearningPath::create([
+                    'user_id' => $user->id,
+                    'learning_path_id' => $learningPath->id,
+                ]);
+            }
+        });
+    }
 }

@@ -3,13 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Material;
+use App\Models\Quiz;
 use App\Models\User;
 use App\Models\UserLearningPath;
 use App\Models\UserMaterial;
+use App\Models\UserQuiz;
 use Illuminate\Http\Request;
 
 class MaterialController extends Controller
 {
+    public function getAllMaterials()
+    {
+        $materials = Material::with('learningPath')->get();
+
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'All materials retrieved successfully',
+                'data' => $materials,
+            ],
+            200,
+        );
+    }
     // Fetch all materials for a learning path
     public function index($learningPathId)
     {
@@ -30,9 +45,16 @@ class MaterialController extends Controller
         $validated = $request->validate([
             'learning_path_id' => 'required|exists:learning_paths,id',
             'title' => 'required|string|max:255',
-            'material_image' => 'nullable|string',
+            'material_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Validasi file image
             'material_text' => 'required|string',
         ]);
+
+        // Cek jika ada file material_image
+        if ($request->hasFile('material_image')) {
+            $imageName = time() . '_' . $request->file('material_image')->getClientOriginalName();
+            $imagePath = $request->file('material_image')->storeAs('materials/images', $imageName, 'public');
+            $validated['material_image'] = 'storage/' . $imagePath; // Simpan path file
+        }
 
         $material = Material::create($validated);
         return response()->json(
@@ -87,9 +109,16 @@ class MaterialController extends Controller
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'material_image' => 'nullable|string',
+            'material_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'material_text' => 'required|string',
         ]);
+
+        // Cek jika ada file material_image
+        if ($request->hasFile('material_image')) {
+            $imageName = time() . '_' . $request->file('material_image')->getClientOriginalName();
+            $imagePath = $request->file('material_image')->storeAs('materials/images', $imageName, 'public');
+            $validated['material_image'] = 'public/' . $imagePath; // Simpan path file
+        }
 
         $material->update($validated);
         return response()->json(
@@ -203,6 +232,21 @@ class MaterialController extends Controller
 
             if ($nextUserMaterial) {
                 $nextUserMaterial->update(['is_unlocked' => true]);
+            }
+        } else {
+            // Jika ini adalah materi terakhir, buka quiz pertama
+            $firstQuiz = Quiz::where('learning_path_id', $userLearningPath->learning_path_id)
+                ->orderBy('id')
+                ->first();
+
+            if ($firstQuiz) {
+                $userQuiz = UserQuiz::firstOrCreate(
+                    [
+                        'user_learning_path_id' => $userLearningPath->id,
+                        'quiz_id' => $firstQuiz->id,
+                    ],
+                    ['is_unlocked' => true],
+                );
             }
         }
 

@@ -46,6 +46,7 @@ Route::middleware('auth:api')->group(function () {
 
     // Material routes
     Route::prefix('materials')->group(function () {
+        Route::get('/', [MaterialController::class, 'getAllMaterials']);
         Route::get('/{learningPathId}', [MaterialController::class, 'index']);
         Route::post('/', [MaterialController::class, 'store'])->middleware('role:admin');
         Route::get('/detail/{id}', [MaterialController::class, 'show']);
@@ -56,6 +57,7 @@ Route::middleware('auth:api')->group(function () {
 
     // Quiz routes
     Route::prefix('quizzes')->group(function () {
+        Route::get('/', [QuizController::class, 'getAllQuizzes']);
         Route::get('/{learningPathId}', [QuizController::class, 'index']);
         Route::post('/', [QuizController::class, 'store'])->middleware('role:admin');
         Route::get('/detail/{id}', [QuizController::class, 'show']);

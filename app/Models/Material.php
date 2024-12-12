@@ -35,11 +35,17 @@ class Material extends Model
             foreach ($userLearningPaths as $userLearningPath) {
                 $isFirstMaterial = !UserMaterial::where('user_learning_path_id', $userLearningPath->id)->exists();
 
+                $allMaterialsCompleted = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
+                    ->where('is_completed', false)
+                    ->doesntExist();
+
+                $isUnlocked = $isFirstMaterial || $allMaterialsCompleted;
+
                 UserMaterial::create([
                     'user_learning_path_id' => $userLearningPath->id,
                     'material_id' => $material->id,
                     'is_completed' => false,
-                    'is_unlocked' => $isFirstMaterial,
+                    'is_unlocked' => $isUnlocked,
                 ]);
             }
         });

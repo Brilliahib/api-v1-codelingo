@@ -11,7 +11,7 @@ class ChangePasswordRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,17 @@ class ChangePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'current_password' => ['required', 'max:100'],
+            'new_password' => ['required', 'max:100', 'confirmed'],
+            'new_password_confirmation' => ['required', 'max:100'],
+        ];
+    }
+
+    public function messages()
+    {
+        return [
+            'new_password.confirmed' => 'New password and confirmation do not match',
+            'new_password_confirmation.required' => 'Password confirmation is required',
         ];
     }
 }
