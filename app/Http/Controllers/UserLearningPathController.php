@@ -52,34 +52,68 @@ class UserLearningPathController extends Controller
         );
     }
 
-    // Get Detail Learning Path between User
     public function getUserLearningPathDetail(UserLearningPath $userLearningPath)
     {
-        $userLearningPath->load(['user', 'learningPath', 'userMaterials.material', 'userQuizzes.quiz']);
-
-        // Menghitung progress untuk userLearningPath
+        $userLearningPath->load(['learningPath', 'userMaterials.material', 'userQuizzes.quiz']);
+    
         $completedMaterials = $userLearningPath->userMaterials->where('is_completed', true)->count();
         $totalMaterials = $userLearningPath->userMaterials->count();
-
+    
         $completedQuizzes = $userLearningPath->userQuizzes->where('is_completed', true)->count();
         $totalQuizzes = $userLearningPath->userQuizzes->count();
-
+    
         $totalCompleted = $completedMaterials + $completedQuizzes;
         $totalItems = $totalMaterials + $totalQuizzes;
         $progress_status = $totalItems > 0 ? ($totalCompleted / $totalItems) * 100 : 0;
-
-        // Menambahkan progress_status ke dalam data userLearningPath
+    
         $userLearningPath->progress_status = round($progress_status, 2);
-
+    
+        $combinedItems = $userLearningPath->userMaterials
+            ->map(function ($material) {
+                return [
+                    'id' => $material->id,
+                    'type' => 'material',
+                    'title' => $material->material->title,
+                    'is_completed' => $material->is_completed,
+                    'is_unlocked' => $material->is_unlocked,
+                    'created_at' => $material->created_at,
+                    'updated_at' => $material->updated_at,
+                    'material_image' => $material->material->material_image,
+                    'material_text' => $material->material->material_text,
+                ];
+            })
+            ->merge(
+                $userLearningPath->userQuizzes->map(function ($quiz) {
+                    return [
+                        'id' => $quiz->id,
+                        'type' => 'quiz',
+                        'title' => $quiz->quiz->title,
+                        'is_completed' => $quiz->is_completed,
+                        'is_unlocked' => $quiz->is_unlocked,
+                        'created_at' => $quiz->created_at,
+                        'updated_at' => $quiz->updated_at,
+                        'quiz_description' => $quiz->quiz->description,
+                    ];
+                }),
+            );
+    
+        $combinedItems = $combinedItems->sortBy('created_at');
+    
+        $userLearningPath = $userLearningPath->only('id', 'user_id', 'learning_path_id', 'progress_status', 'created_at', 'updated_at');
+        
         return response()->json(
             [
                 'statusCode' => 200,
                 'message' => 'Detail User Learning Path berhasil diambil',
-                'data' => $userLearningPath,
+                'data' => [
+                    'learning_details' => $userLearningPath,
+                    'learning_items' => $combinedItems,
+                ],
             ],
             Response::HTTP_OK,
         );
     }
+    
 
     // Get progress learning path users
     public function getUserLearningPathProgress(UserLearningPath $userLearningPath)
