@@ -12,13 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('materials', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('learning_path_id')->constrained('learning_paths')->onDelete('cascade'); 
+            $table->uuid('id')->primary(); 
+            $table->uuid('learning_path_id');  
             $table->string('title'); 
             $table->string('material_image')->nullable(); 
             $table->text('material_text')->nullable();
             $table->string('type')->default('material');
             $table->timestamps();
+
+            $table->foreign('learning_path_id')->references('id')->on('learning_paths')->onDelete('cascade');
         });
     }
 

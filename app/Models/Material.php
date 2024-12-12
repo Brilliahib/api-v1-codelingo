@@ -4,29 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;  // Untuk membuat UUID
 
 class Material extends Model
 {
     use HasFactory;
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
     protected $guarded = ['id'];
-
-    public function learningPath()
-    {
-        return $this->belongsTo(LearningPath::class);
-    }
-
-    public function sections()
-    {
-        return $this->hasMany(Section::class)->orderBy('order');
-    }
-
-    public function userMaterials()
-    {
-        return $this->hasMany(UserMaterial::class);
-    }
 
     protected static function booted()
     {
+        static::creating(function ($material) {
+            if (empty($material->id)) {
+                $material->id = (string) Str::uuid(); 
+            }
+        });
+
         static::created(function ($material) {
             $learningPathId = $material->learning_path_id;
 
@@ -49,5 +46,20 @@ class Material extends Model
                 ]);
             }
         });
+    }
+
+    public function learningPath()
+    {
+        return $this->belongsTo(LearningPath::class);
+    }
+
+    public function sections()
+    {
+        return $this->hasMany(Section::class)->orderBy('order');
+    }
+
+    public function userMaterials()
+    {
+        return $this->hasMany(UserMaterial::class);
     }
 }

@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('user_learning_paths', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('learning_path_id')->constrained()->cascadeOnDelete();
+            $table->uuid('learning_path_id');
             $table->timestamps();
+
+            $table->foreign('learning_path_id')->references('id')->on('learning_paths')->onDelete('cascade');
         });
     }
 

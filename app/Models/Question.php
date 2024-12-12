@@ -4,15 +4,26 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;  
 
 class Question extends Model
 {
     use HasFactory;
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
     protected $guarded = ['id'];
 
-    protected $casts = [
-        'answers' => 'array', 
-    ];
+    protected static function booted()
+    {
+        static::creating(function ($question) {
+            if (empty($question->id)) {
+                $question->id = (string) Str::uuid(); 
+            }
+        });
+    }
 
     public function quiz()
     {

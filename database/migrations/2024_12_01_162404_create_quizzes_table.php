@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('quizzes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('learning_path_id')->constrained('learning_paths')->onDelete('cascade');
+            $table->uuid('learning_path_id'); 
             $table->string('title'); 
             $table->text('description')->nullable(); 
             $table->string('type')->default('quiz'); 
             $table->timestamps();
+
+            $table->foreign('learning_path_id')->references('id')->on('learning_paths')->onDelete('cascade');
         });
     }
 

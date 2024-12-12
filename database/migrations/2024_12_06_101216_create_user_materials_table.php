@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('user_materials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_learning_path_id')->constrained('user_learning_paths')->cascadeOnDelete();
-            $table->foreignId('material_id')->constrained()->cascadeOnDelete();
+            $table->uuid('material_id');
             $table->boolean('is_completed')->default(false);
             $table->boolean('is_unlocked')->default(false);
             $table->timestamps();
+
+            $table->foreign('material_id')->references('id')->on('materials')->onDelete('cascade');
         });
     }
 
