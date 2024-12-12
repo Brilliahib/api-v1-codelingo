@@ -157,114 +157,130 @@ class MaterialController extends Controller
         );
     }
 
-    // Check material is completed
     public function submitMaterial($materialId)
-    {
-        $user = auth()->user();
+{
+    $user = auth()->user();
 
-        $userLearningPath = UserLearningPath::where('user_id', $user->id)
-            ->whereHas('userMaterials', function ($query) use ($materialId) {
-                $query->where('material_id', $materialId);
-            })
-            ->first();
+    // Ambil UserLearningPath berdasarkan user dan materialId
+    $userLearningPath = UserLearningPath::where('user_id', $user->id)
+        ->whereHas('userMaterials', function ($query) use ($materialId) {
+            $query->where('material_id', $materialId);
+        })
+        ->first();
 
-        if (!$userLearningPath) {
-            return response()->json(
-                [
-                    'statusCode' => 404,
-                    'message' => 'User learning path not found for the given material',
-                    'data' => null,
-                ],
-                404,
-            );
-        }
+    // Cek apakah UserLearningPath ditemukan
+    if (!$userLearningPath) {
+        return response()->json(
+            [
+                'statusCode' => 404,
+                'message' => 'User learning path not found for the given material',
+                'data' => null,
+            ],
+            404
+        );
+    }
 
-        $userMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
-            ->where('material_id', $materialId)
-            ->first();
+    // Ambil UserMaterial berdasarkan userLearningPath dan materialId
+    $userMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
+        ->where('material_id', $materialId)
+        ->first();
 
-        if (!$userMaterial) {
-            return response()->json(
-                [
-                    'statusCode' => 404,
-                    'message' => 'User material not found',
-                    'data' => null,
-                ],
-                404,
-            );
-        }
+    // Cek apakah UserMaterial ditemukan
+    if (!$userMaterial) {
+        return response()->json(
+            [
+                'statusCode' => 404,
+                'message' => 'User material not found',
+                'data' => null,
+            ],
+            404
+        );
+    }
 
-        if ($userMaterial->is_completed) {
-            return response()->json(
-                [
-                    'statusCode' => 200,
-                    'message' => 'Material already completed',
-                    'data' => $userMaterial,
-                ],
-                200,
-            );
-        }
-
-        // Update is_completed to true
-        $userMaterial->update(['is_completed' => true]);
-
-        // Tambahkan EXP ke user
-        $earnedExp = 100; // Misalnya setiap materi memberikan 100 EXP
-        $user->exp += $earnedExp;
-
-        // Tentukan level dan league baru user berdasarkan EXP yang baru
-        $user->level = User::determineLevel($user->exp);
-        $user->league = User::determineLeague($user->exp);
-
-        // Simpan perubahan EXP, level, dan league
-        $user->save();
-
-        // Unlock next material if available
-        $nextMaterial = Material::where('learning_path_id', $userLearningPath->learning_path_id)
-            ->where('id', '>', $materialId)
-            ->orderBy('id')
-            ->first();
-
-        if ($nextMaterial) {
-            $nextUserMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
-                ->where('material_id', $nextMaterial->id)
-                ->first();
-
-            if ($nextUserMaterial) {
-                $nextUserMaterial->update(['is_unlocked' => true]);
-            }
-        } else {
-            // Jika ini adalah materi terakhir, buka quiz pertama
-            $firstQuiz = Quiz::where('learning_path_id', $userLearningPath->learning_path_id)
-                ->orderBy('id')
-                ->first();
-
-            if ($firstQuiz) {
-                $userQuiz = UserQuiz::firstOrCreate(
-                    [
-                        'user_learning_path_id' => $userLearningPath->id,
-                        'quiz_id' => $firstQuiz->id,
-                    ],
-                    ['is_unlocked' => true],
-                );
-            }
-        }
-
+    // Jika material sudah selesai
+    if ($userMaterial->is_completed) {
         return response()->json(
             [
                 'statusCode' => 200,
-                'message' => 'Material marked as completed, EXP added, and next material unlocked',
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'exp' => $user->exp,
-                        'level' => $user->level,
-                        'league' => $user->league,
-                    ],
-                    'userMaterial' => $userMaterial,
-                ],
+                'message' => 'Material already completed',
+                'data' => $userMaterial,
             ],
-            200,
+            200
         );
     }
+
+    // Update is_completed menjadi true
+    $userMaterial->update(['is_completed' => true]);
+
+    // Tambahkan EXP ke user
+    $earnedExp = 100; // Misalnya setiap materi memberikan 100 EXP
+    $user->exp += $earnedExp;
+
+    // Tentukan level dan league baru user berdasarkan EXP yang baru
+    $user->level = User::determineLevel($user->exp);
+    $user->league = User::determineLeague($user->exp);
+
+    // Simpan perubahan EXP, level, dan league
+    $user->save();
+
+    // Unlock next material jika tersedia
+    $nextMaterial = Material::where('learning_path_id', $userLearningPath->learning_path_id)
+        ->where('id', '>', $materialId)
+        ->orderBy('id')
+        ->first();
+
+    if ($nextMaterial) {
+        // Cek UserMaterial berikutnya
+        $nextUserMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)
+            ->where('material_id', $nextMaterial->id)
+            ->first();
+
+        if ($nextUserMaterial) {
+            // Update is_unlocked menjadi true
+            $nextUserMaterial->update(['is_unlocked' => true]);
+        }
+    } else {
+        // Jika tidak ada next material, unlock quiz pertama jika ada
+        $firstQuiz = Quiz::where('learning_path_id', $userLearningPath->learning_path_id)
+            ->orderBy('id')
+            ->first();
+
+        if ($firstQuiz) {
+            // Cek apakah quiz sudah ada, jika belum buat dan set is_unlocked ke true
+            $userQuiz = UserQuiz::firstOrCreate(
+                [
+                    'user_learning_path_id' => $userLearningPath->id,
+                    'quiz_id' => $firstQuiz->id, // UUID digunakan di sini
+                ],
+                [
+                    'is_unlocked' => true,
+                ]
+            );
+
+            // Pastikan is_unlocked menjadi true jika UserQuiz sudah ada dan belum di-unlock
+            if (!$userQuiz->wasRecentlyCreated && !$userQuiz->is_unlocked) {
+                $userQuiz->update(['is_unlocked' => true]);
+            }
+        }
+    }
+
+    return response()->json(
+        [
+            'statusCode' => 200,
+            'message' => 'Material marked as completed, EXP added, and next material or quiz unlocked',
+            'data' => [
+                'user' => [
+                    'id' => $user->id,
+                    'exp' => $user->exp,
+                    'level' => $user->level,
+                    'league' => $user->league,
+                ],
+                'userMaterial' => $userMaterial,
+                'userQuiz' => $userQuiz ?? null
+            ],
+        ],
+        200
+    );
+}
+
 }

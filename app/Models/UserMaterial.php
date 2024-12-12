@@ -43,7 +43,7 @@ class UserMaterial extends Model
                 $learningPathId = $userMaterial->material->learningPath->id;
                 $allMaterialsCompleted = UserMaterial::where('user_learning_path_id', $userMaterial->user_learning_path_id)
                     ->where('is_completed', false)
-                    ->doesntExist();
+                    ->doesntExist(); 
 
                 if ($allMaterialsCompleted) {
                     $firstQuiz = Quiz::where('learning_path_id', $learningPathId)->orderBy('id')->first();
