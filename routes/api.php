@@ -8,6 +8,7 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
 use App\Http\Controllers\SectionController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserLearningPathController;
 use App\Http\Controllers\UserSectionProgressController;
 use Illuminate\Http\Request;
@@ -111,5 +112,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/{id}', [AdminController::class, 'getUserDetail'])->middleware('role:admin'); 
         Route::delete('/{id}', [AdminController::class, 'deleteUser'])->middleware('role:admin'); 
         Route::put('/{id}', [AdminController::class, 'updateUser'])->middleware('role:admin');
+        Route::get('/league/rank', [UserController::class, 'getUserRank']);
+        Route::get('/count/exp', [UserController::class, 'getUserXP']);
     });
 });
