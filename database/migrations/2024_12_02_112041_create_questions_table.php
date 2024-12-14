@@ -16,6 +16,8 @@ return new class extends Migration
             $table->foreignUuid('quiz_id')->constrained('quizzes')->onDelete('cascade');
             $table->text('question_text');
             $table->string('question_image')->nullable();
+            $table->text('explanation_text')->nullable();
+            $table->string('explanation_image')->nullable();
             $table->timestamps();
         });
     }

@@ -9,6 +9,7 @@ use App\Models\UserLearningPath;
 use App\Models\UserMaterial;
 use App\Models\UserQuiz;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MaterialController extends Controller
 {
@@ -71,6 +72,7 @@ class MaterialController extends Controller
     public function show($id)
     {
         $material = Material::find($id);
+
         if (!$material) {
             return response()->json(
                 [
@@ -81,6 +83,20 @@ class MaterialController extends Controller
                 404,
             );
         }
+
+        // Ambil user yang sedang login
+        $user = Auth::user();
+
+        // Ambil learning_path_id dari Material terkait
+        $learningPathId = $material->learning_path_id;
+
+        // Ambil user_learning_path_id berdasarkan user dan learning_path_id
+        $userLearningPath = UserLearningPath::where('user_id', $user->id)
+            ->where('learning_path_id', $learningPathId)
+            ->first();
+
+        // Tambahkan user_learning_path_id sebagai properti tambahan ke Material
+        $material->user_learning_path_id = $userLearningPath ? $userLearningPath->id : null;
 
         return response()->json(
             [

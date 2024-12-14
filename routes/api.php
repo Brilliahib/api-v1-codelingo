@@ -36,6 +36,7 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/auth/get-auth', [AuthController::class, 'getAuth']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
     Route::post('/auth/update-account', [AuthController::class, 'updateAccount']);
+    Route::post('auth/update-photo', [AuthController::class, 'updatePhotoProfile']);
     // Learning Path routes
     Route::prefix('learning-paths')->group(function () {
         Route::get('/', [LearningPathController::class, 'index']);

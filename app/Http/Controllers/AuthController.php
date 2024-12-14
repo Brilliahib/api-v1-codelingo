@@ -152,7 +152,7 @@ class AuthController extends Controller
                     'statusCode' => 401,
                     'message' => 'User not authenticated',
                 ],
-                401
+                401,
             );
         }
 
@@ -161,7 +161,7 @@ class AuthController extends Controller
         if ($request->hasFile('profile')) {
             $imageName = time() . '_' . $request->file('profile')->getClientOriginalName();
             $imagePath = $request->file('profile')->storeAs('profile/users', $imageName, 'public');
-            $data['profile'] = 'public/' . $imagePath; 
+            $data['profile'] = 'public/' . $imagePath;
         }
 
         $user->update($data);
@@ -171,5 +171,37 @@ class AuthController extends Controller
             'message' => 'Account updated successfully',
             'user' => $user,
         ]);
+    }
+
+    public function updatePhotoProfile(Request $request): JsonResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(
+                [
+                    'statusCode' => 401,
+                    'message' => 'User not authenticated',
+                ],
+                401,
+            );
+        }
+
+        $data = $request->validate([
+            'image' => 'required|string|in:general.png,zombie.png,pirates.png,dracula.png,devil.png,santa-1.png,santa-2.png',
+        ]);
+
+        $imagePath = '/images/profile/' . $data['image'];
+
+        $user->update(['image' => $imagePath]);
+
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Profile picture updated successfully',
+                'image' => $user->image,
+            ],
+            200,
+        );
     }
 }

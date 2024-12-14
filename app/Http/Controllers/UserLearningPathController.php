@@ -74,7 +74,7 @@ class UserLearningPathController extends Controller
         // Menggabungkan data material dan quiz dari learningPath dan user
         $combinedItems = $userLearningPath->learningPath->materials->map(function ($material) use ($userLearningPath) {
             // Cek apakah material ini sudah diselesaikan oleh user
-            $userMaterial = $userLearningPath->userMaterials->where('material_id', $material->id)->first();
+            $userMaterial = $userLearningPath->userMaterials->where('material_id', $material->id)->last();
             return [
                 'id' => $material->id, // Mengambil ID dari material yang ada di learningPath
                 'type' => 'material',
@@ -91,7 +91,7 @@ class UserLearningPathController extends Controller
         // Tambahkan data quiz setelah material
         $combinedItems = $combinedItems->merge(
             $userLearningPath->learningPath->quizzes->map(function ($quiz) use ($userLearningPath) {
-                $userQuiz = $userLearningPath->userQuizzes->where('quiz_id', $quiz->id)->first();
+                $userQuiz = $userLearningPath->userQuizzes->where('quiz_id', $quiz->id)->last();
 
                 // Mengambil ID dari question yang pertama terkait dengan quiz
                 $question = $quiz->questions->first(); // Ambil question pertama

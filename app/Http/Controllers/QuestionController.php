@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Question;
 use App\Models\User;
+use App\Models\UserLearningPath;
+use App\Models\UserQuiz;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class QuestionController extends Controller
 {
@@ -69,6 +72,20 @@ class QuestionController extends Controller
                 404,
             );
         }
+
+        // Ambil user yang sedang login
+        $user = Auth::user();
+
+        // Ambil learning_path_id dari Quiz terkait
+        $learningPathId = $question->quiz->learning_path_id;
+
+        // Ambil user_learning_path_id berdasarkan user dan learning_path_id
+        $userLearningPath = UserLearningPath::where('user_id', $user->id)
+            ->where('learning_path_id', $learningPathId)
+            ->first();
+
+        // Tambahkan user_learning_path_id sebagai properti tambahan
+        $question->user_learning_path_id = $userLearningPath ? $userLearningPath->id : null;
 
         return response()->json([
             'statusCode' => 200,
@@ -176,7 +193,7 @@ class QuestionController extends Controller
         $correctAnswer = $question->answers()->where('is_correct', true)->first();
         $isCorrect = $correctAnswer && $correctAnswer->id == $validated['answer_id'];
 
-        $earnedExp = $isCorrect ? 200 : 0; 
+        $earnedExp = $isCorrect ? 200 : 0;
 
         $user = User::findOrFail($validated['user_id']);
         $user->exp += $earnedExp;
@@ -186,18 +203,23 @@ class QuestionController extends Controller
 
         $user->save();
 
+        // Update user_quizzes to set is_completed to true
+        $userQuiz = UserQuiz::where('user_learning_path_id', $user->id)
+            ->where('quiz_id', $question->quiz_id)
+            ->first();
+
+        if ($userQuiz) {
+            $userQuiz->is_completed = true;
+            $userQuiz->save();
+        }
+
         return response()->json([
             'statusCode' => 200,
             'message' => $isCorrect ? 'Correct answer!' : 'Incorrect answer!',
             'data' => [
                 'is_correct' => $isCorrect,
                 'earned_exp' => $earnedExp,
-                'user' => [
-                    'id' => $user->id,
-                    'exp' => $user->exp,
-                    'level' => $user->level,
-                    'league' => $user->league,
-                ],
+                'correct_answer' => $correctAnswer ? $correctAnswer : null,
             ],
         ]);
     }
