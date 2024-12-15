@@ -115,5 +115,6 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/{id}', [AdminController::class, 'updateUser'])->middleware('role:admin');
         Route::get('/league/rank', [UserController::class, 'getUserRank']);
         Route::get('/count/exp', [UserController::class, 'getUserXP']);
+        Route::get('/achievements/detail', [UserController::class, 'getUserAchievements']);
     });
 });

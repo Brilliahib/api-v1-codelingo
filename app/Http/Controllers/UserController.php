@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserLearningPath;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
@@ -93,5 +95,48 @@ class UserController extends Controller
             }) + 1;
 
         return $rank ?? 1;
+    }
+
+    public function getUserAchievements()
+    {
+        $user = auth()->user();
+
+        if (!$user) {
+            return response()->json(
+                [
+                    'statusCode' => 401,
+                    'message' => 'Unauthorized',
+                ],
+                Response::HTTP_UNAUTHORIZED,
+            );
+        }
+
+        $completedLearningPaths = UserLearningPath::with(['learningPath'])
+            ->where('user_id', $user->id)
+            ->get()
+            ->filter(function ($userLearningPath) {
+                $completedMaterials = $userLearningPath->userMaterials->where('is_completed', true)->count();
+                $totalMaterials = $userLearningPath->userMaterials->count();
+
+                $completedQuizzes = $userLearningPath->userQuizzes->where('is_completed', true)->count();
+                $totalQuizzes = $userLearningPath->userQuizzes->count();
+
+                $totalCompleted = $completedMaterials + $completedQuizzes;
+                $totalItems = $totalMaterials + $totalQuizzes;
+
+                $progress_status = $totalItems > 0 ? ($totalCompleted / $totalItems) * 100 : 0;
+
+                return round($progress_status, 2) === 100.0;
+            })
+            ->values(); 
+
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'User achievements successfully retrieved',
+                'data' => $completedLearningPaths,
+            ],
+            Response::HTTP_OK,
+        );
     }
 }
