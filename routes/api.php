@@ -11,7 +11,6 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserLearningPathController;
 use App\Http\Controllers\UserSectionProgressController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -78,8 +77,10 @@ Route::middleware('auth:api')->group(function () {
 
     Route::prefix('questions')->group(function () {
         Route::get('/{quizId}', [QuestionController::class, 'index']);
+        Route::get('/{quizId}/explanation', [QuestionController::class, 'index']);
         Route::post('/', [QuestionController::class, 'store']);
         Route::get('/detail/{id}', [QuestionController::class, 'show']);
+        Route::get('/detail/{id}/explanation', [QuestionController::class, 'show']);
         Route::put('/{id}', [QuestionController::class, 'update']);
         Route::delete('/{id}', [QuestionController::class, 'destroy']);
         Route::post('/submit/{questionId}', [QuestionController::class, 'submitSingleQuestion']);

@@ -28,7 +28,9 @@ class QuestionController extends Controller
             'quiz_id' => 'required|exists:quizzes,id',
             'question_text' => 'required|string',
             'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'answers' => 'required|array|min:2', // Minimal 2 jawaban
+            'explanation_text' => 'required|string',
+            'explanation_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'answers' => 'required|array|min:2', 
             'answers.*.answer_text' => 'required|string',
             'answers.*.is_correct' => 'required|boolean',
         ]);
@@ -36,7 +38,13 @@ class QuestionController extends Controller
         if ($request->hasFile('question_image')) {
             $imageName = time() . '_' . $request->file('question_image')->getClientOriginalName();
             $imagePath = $request->file('question_image')->storeAs('question_images', $imageName, 'public');
-            $validated['question_image'] = 'public/' . $imagePath;
+            $validated['question_image'] = 'storage/' . $imagePath;
+        }
+
+        if ($request->hasFile('explanation_image')) {
+            $imageName = time() . '_' . $request->file('explanation_image')->getClientOriginalName();
+            $imagePath = $request->file('explanation_image')->storeAs('explanation_images', $imageName, 'public');
+            $validated['explanation_image'] = 'storage/' . $imagePath;
         }
 
         // Buat pertanyaan
@@ -44,6 +52,8 @@ class QuestionController extends Controller
             'quiz_id' => $validated['quiz_id'],
             'question_text' => $validated['question_text'],
             'question_image' => $validated['question_image'] ?? null,
+            'explanation_text' => $validated['explanation_text'],
+            'explanation_image' => $validated['explanation_image'] ?? null,
         ]);
 
         // Tambahkan jawaban
@@ -112,6 +122,8 @@ class QuestionController extends Controller
         $validated = $request->validate([
             'question_text' => 'required|string',
             'question_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'explanation_text' => 'required|string',
+            'explanation_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'answers' => 'required|array|min:2',
             'answers.*.answer_text' => 'required|string',
             'answers.*.is_correct' => 'required|boolean',
@@ -130,10 +142,25 @@ class QuestionController extends Controller
             $validated['question_image'] = 'public/' . $imagePath;
         }
 
+        if ($request->hasFile('explanation_image')) {
+            if ($question->explanation_image) {
+                $oldImagePath = public_path('storage/' . $question->explanation_image);
+                if (file_exists($oldImagePath)) {
+                    unlink($oldImagePath);
+                }
+            }
+
+            $imageName = time() . '_' . $request->file('explanation_image')->getClientOriginalName();
+            $imagePath = $request->file('explanation_image')->storeAs('explanation_images', $imageName, 'public');
+            $validated['explanation_image'] = 'public/' . $imagePath;
+        }
+
         // Update pertanyaan
         $question->update([
             'question_text' => $validated['question_text'],
             'question_image' => $validated['question_image'] ?? $question->question_image,
+            'explanation_text' => $validated['explanation_text'],
+            'explanation_image' => $validated['explanation_image'] ?? $question->explanation_image,
         ]);
 
         // Update jawaban (hapus semua dulu, lalu tambahkan kembali)
