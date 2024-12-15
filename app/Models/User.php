@@ -25,10 +25,7 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
     /**
      * The attributes that should be cast.
@@ -39,6 +36,70 @@ class User extends Authenticatable implements JWTSubject
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * Update league based on exp before saving.
+     */
+    protected static function booted()
+    {
+        static::saving(function ($user) {
+            $user->level = self::determineLevel($user->exp);
+            $user->league = self::determineLeague($user->exp);
+        });
+
+        static::created(function ($user) {
+            $learningPaths = LearningPath::all();
+
+            foreach ($learningPaths as $learningPath) {
+                $userLearningPath = UserLearningPath::create([
+                    'user_id' => $user->id,
+                    'learning_path_id' => $learningPath->id,
+                ]);
+
+                $hasAnyMaterial = UserMaterial::where('user_learning_path_id', $userLearningPath->id)->exists();
+                foreach ($learningPath->materials as $material) {
+                    UserMaterial::create([
+                        'user_learning_path_id' => $userLearningPath->id,
+                        'material_id' => $material->id,
+                        'is_completed' => false,
+                        'is_unlocked' => !$hasAnyMaterial,
+                    ]);
+
+                    $hasAnyMaterial = true; 
+                }
+
+                foreach ($learningPath->quizzes as $quiz) {
+                    UserQuiz::create([
+                        'user_learning_path_id' => $userLearningPath->id,
+                        'quiz_id' => $quiz->id,
+                        'is_unlocked' => false,
+                    ]);
+                }
+            }
+        });
+    }
+
+    /**
+     * Determine the league based on exp.
+     */
+    public static function determineLeague($exp): string
+    {
+        if ($exp >= 10000) {
+            return 'diamond';
+        } elseif ($exp >= 5000) {
+            return 'emerald';
+        } elseif ($exp >= 2000) {
+            return 'gold';
+        } elseif ($exp >= 1000) {
+            return 'silver';
+        }
+        return 'bronze';
+    }
+
+    public static function determineLevel($exp): int
+    {
+        return min(99, intdiv($exp, 1000) + 1);
+    }
+
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -47,5 +108,17 @@ class User extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    public function completedSections()
+    {
+        return $this->belongsToMany(Section::class, 'user_section_progress')
+            ->withPivot('is_completed')
+            ->withTimestamps();
+    }
+
+    public function learningPaths()
+    {
+        return $this->hasMany(UserLearningPath::class);
     }
 }

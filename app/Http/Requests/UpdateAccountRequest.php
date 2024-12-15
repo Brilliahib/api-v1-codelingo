@@ -11,7 +11,7 @@ class UpdateAccountRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,9 @@ class UpdateAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name' => 'sometimes|string|max:255',
+            'username' => 'sometimes|string',
+            'email' => 'sometimes|email|nullable|unique:users,email,' . $this->user()->id,
         ];
     }
 }
