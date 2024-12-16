@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Quiz;
+use App\Models\UserQuiz;
 use Illuminate\Http\Request;
 
 class QuizController extends Controller
@@ -130,6 +131,34 @@ class QuizController extends Controller
                 'statusCode' => 200,
                 'message' => 'Quiz deleted successfully',
                 'data' => null,
+            ],
+            200,
+        );
+    }
+
+    public function getQuizExplanation($userLearningPathId)
+    {
+        $completedQuizzes = UserQuiz::with('quiz')
+            ->where('user_learning_path_id', $userLearningPathId)
+            ->where('is_completed', true)
+            ->get();
+
+        if ($completedQuizzes->isEmpty()) {
+            return response()->json(
+                [
+                    'statusCode' => 404,
+                    'message' => 'No completed quizzes found',
+                    'data' => null,
+                ],
+                404,
+            );
+        }
+
+        return response()->json(
+            [
+                'statusCode' => 200,
+                'message' => 'Completed quizzes retrieved successfully',
+                'data' => $completedQuizzes,
             ],
             200,
         );

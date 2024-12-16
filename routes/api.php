@@ -60,6 +60,7 @@ Route::middleware('auth:api')->group(function () {
     Route::prefix('quizzes')->group(function () {
         Route::get('/', [QuizController::class, 'getAllQuizzes']);
         Route::get('/{learningPathId}', [QuizController::class, 'index']);
+        Route::get('/{userLearningPathId}/explanation', [QuizController::class, 'getQuizExplanation']);
         Route::post('/', [QuizController::class, 'store'])->middleware('role:admin');
         Route::get('/detail/{id}', [QuizController::class, 'show']);
         Route::put('/{id}', [QuizController::class, 'update'])->middleware('role:admin');
