@@ -46,6 +46,11 @@ class LearningPath extends Model
         return $this->hasMany(Quiz::class);
     }
 
+    public function matchingPairs()
+    {
+        return $this->hasMany((MatchingPairs::class));
+    }
+
     public function userLearningPaths()
     {
         return $this->hasMany(UserLearningPath::class);

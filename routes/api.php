@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\LearningPathController;
+use App\Http\Controllers\MatchingPairController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\QuizController;
@@ -76,6 +77,12 @@ Route::middleware('auth:api')->group(function () {
         Route::delete('/{id}', [SectionController::class, 'destroy'])->middleware('role:admin');
     });
 
+    Route::prefix('matching-pairs')->group(function () {
+        Route::get('/', [MatchingPairController::class, 'index']);
+        Route::post('/', [MatchingPairController::class, 'store'])->middleware('role:admin');
+        Route::post('/{id}/submit', [MatchingPairController::class, 'submit']);
+    });
+
     Route::prefix('questions')->group(function () {
         Route::get('/{quizId}', [QuestionController::class, 'index']);
         Route::get('/{quizId}/explanation', [QuestionController::class, 'index']);
@@ -111,9 +118,9 @@ Route::middleware('auth:api')->group(function () {
     });
 
     Route::prefix('users')->group(function () {
-        Route::get('/', [AdminController::class, 'getAllUsers'])->middleware('role:admin'); 
-        Route::get('/{id}', [AdminController::class, 'getUserDetail'])->middleware('role:admin'); 
-        Route::delete('/{id}', [AdminController::class, 'deleteUser'])->middleware('role:admin'); 
+        Route::get('/', [AdminController::class, 'getAllUsers'])->middleware('role:admin');
+        Route::get('/{id}', [AdminController::class, 'getUserDetail'])->middleware('role:admin');
+        Route::delete('/{id}', [AdminController::class, 'deleteUser'])->middleware('role:admin');
         Route::put('/{id}', [AdminController::class, 'updateUser'])->middleware('role:admin');
         Route::get('/league/rank', [UserController::class, 'getUserRank']);
         Route::get('/count/exp', [UserController::class, 'getUserXP']);
